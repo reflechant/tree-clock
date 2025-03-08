@@ -28,10 +28,16 @@
             const svg = document.getElementById('tree-svg');
             const container = document.getElementById('tree-container');
 
-            // Set viewBox to make SVG responsive
             const width = window.innerWidth;
             const height = window.innerHeight;
             svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+            const now = new Date();
+            const current_time = {
+                "hours": now.getHours(),
+                "minutes": now.getMinutes(),
+                "seconds": now.getSeconds()
+            }
 
             // tree root
             const global_start = {
@@ -44,12 +50,17 @@
                 "minutes": [2, 2, 3, 5],
                 "seconds": [2, 2, 3, 5]
             };
+            // we number all lines but we don't want to color only the last layer. Will refine later
+            const line_num_offset = {
+                "hours": 14,
+                "minutes": 18,
+                "seconds": 18
+            }
             // Custom colors for each layer
             const colors = {
-                // Hour colors - emerald green shades from darker to lighter
-                "hours": ['#0B4D2C', '#137547', '#1B9C5F', '#23C277'],
-                "minutes": ['#8B0000', '#B22222', '#DC143C', '#FF4500'],
-                "seconds": ['#000080', '#0000CD', '#4169E1', '#1E90FF'],
+                "hours": ['#0B4D2C', '#137547', '#1B9C5F', '#23C277'], // green
+                "minutes": ['#8B0000', '#B22222', '#DC143C', '#FF4500'], // red
+                "seconds": ['#000080', '#0000CD', '#4169E1', '#1E90FF'], // blue
             };
             const angles = {
                 "hours": 0,
@@ -78,8 +89,15 @@
                     end_angle,
                     branch_height,
                     factors[key]
-                ).map(line => [...line, colors[key][line[2] % colors[key].length]])
-                );
+                ).map(line => {
+                    const isLastLayer = line[2] === factors[key].length - 1;
+                    const lineNumber = line[3];
+                    const currentValue = current_time[key];
+
+                    const color = (isLastLayer && lineNumber === currentValue) ? 'white' : colors[key][line[2] % colors[key].length];
+
+                    return [...line, color];
+                }));
 
                 start_angle = end_angle;
             }
@@ -92,20 +110,22 @@
                     y1="${start.y}" 
                     x2="${end.x}" 
                     y2="${end.y}" 
-                    stroke="${color}" 
-                    stroke-width="${1}" 
+                    stroke="${color}"
+                    stroke-width="${1}"
                     stroke-linecap="round"
                     data-layer="${layer}"
                     data-line-number="${lineNumber}" />`;
             }).join('\n');
 
-            // Update SVG content
             container.innerHTML = svgContent;
         }
 
         // Initial render and handle window resize
         window.addEventListener('load', renderTree);
         window.addEventListener('resize', renderTree);
+
+        // Set interval to re-render every second
+        setInterval(renderTree, 1000);
     </script>
 </body>
 
