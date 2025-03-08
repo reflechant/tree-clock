@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tree Clock</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #1a1a1a;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <svg id="tree-svg" width="100%" height="100vh" preserveAspectRatio="xMidYMid meet">
+        <g id="tree-container"></g>
+    </svg>
+
+    <script src="tree_clock.js"></script>
+    <script>
+        // Render function to create the tree
+        function renderTree() {
+            const svg = document.getElementById('tree-svg');
+            const container = document.getElementById('tree-container');
+            
+            // Set viewBox to make SVG responsive
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+            
+            // Calculate center point and parameters
+            const global_start = {
+                x: width / 2,
+                y: height * 0.8 // Place it 80% down from the top
+            };
+            
+            const start_angle = -Math.PI / 6; // -30 degrees from vertical
+            const end_angle = Math.PI / 6;    // +30 degrees from vertical
+            const branch_height = height * 0.1; // 10% of container height
+            const hour_factors = [2, 2, 2, 3]; // Prime factors for 24
+            
+            // Custom colors for each layer
+            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeead'];
+
+            // Get the lines from tree_clock
+            const lines = tree_clock(global_start, start_angle, end_angle, branch_height, hour_factors, null, null, colors);
+
+            // Clear previous content
+            container.innerHTML = '';
+
+            // Render each line
+            lines.forEach(line => {
+                const [start, end, color] = line;
+                const lineElement = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                
+                lineElement.setAttribute('x1', start.x);
+                lineElement.setAttribute('y1', start.y);
+                lineElement.setAttribute('x2', end.x);
+                lineElement.setAttribute('y2', end.y);
+                lineElement.setAttribute('stroke', color);
+                lineElement.setAttribute('stroke-width', '2');
+                lineElement.setAttribute('stroke-linecap', 'round');
+
+                container.appendChild(lineElement);
+            });
+        }
+
+        // Initial render and handle window resize
+        window.addEventListener('load', renderTree);
+        window.addEventListener('resize', renderTree);
+    </script>
+</body>
+</html>
