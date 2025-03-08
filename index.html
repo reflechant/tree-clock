@@ -66,7 +66,7 @@
                     return [...acc, product];
                 }, [1]).slice(1),
             };
-            
+
             // we number all lines but we don't want to color only the last layer. Will refine later
             const line_num_offset = {
                 "hours": 14,
@@ -79,6 +79,7 @@
                 "minutes": ['#8B0000', '#B22222', '#DC143C', '#FF4500'], // red
                 "seconds": ['#000080', '#0000CD', '#4169E1', '#1E90FF'], // blue
             };
+            // it's just 24, 60 and 60 but calculated in a universal way
             const lines_num = {
                 "hours": factors.hours.reduce((acc, curr) => acc * curr, 1),
                 "minutes": factors.minutes.reduce((acc, curr) => acc * curr, 1),
@@ -104,9 +105,15 @@
                 ).map(line => {
                     const isLastLayer = line[2] === factors[key].length - 1;
                     const lineNumber = line[3];
-                    const currentValue = current_time[key];
 
-                    const color = (isLastLayer && lineNumber === currentValue) ? 'white' : colors[key][line[2] % colors[key].length];
+                    let highlight = false;
+                    if (isLastLayer) {
+                        highlight = lineNumber === current_time[key];
+                    } else {
+                        // const time_ratio = current_time[key] / lines_num[key];
+                    }
+
+                    const color = highlight ? 'white' : colors[key][line[2] % colors[key].length];
 
                     return [...line, color];
                 }));
