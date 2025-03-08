@@ -51,6 +51,22 @@
                 "minutes": [2, 2, 3, 5],
                 "seconds": [2, 2, 3, 5]
             };
+            // array of arrays of the number of lines in each layer (calculated by running product of factors)
+            const layer_lines = {
+                "hours": factors["hours"].reduce((acc, curr) => {
+                    const product = acc[acc.length - 1] * curr;
+                    return [...acc, product];
+                }, [1]).slice(1),
+                "minutes": factors["minutes"].reduce((acc, curr) => {
+                    const product = acc[acc.length - 1] * curr;
+                    return [...acc, product];
+                }, [1]).slice(1),
+                "seconds": factors["seconds"].reduce((acc, curr) => {
+                    const product = acc[acc.length - 1] * curr;
+                    return [...acc, product];
+                }, [1]).slice(1),
+            };
+            
             // we number all lines but we don't want to color only the last layer. Will refine later
             const line_num_offset = {
                 "hours": 14,

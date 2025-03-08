@@ -62,9 +62,9 @@ function tree_clock(global_start, start_angle, end_angle, height, factors) {
             let line_number = 1;
             for (const [sector_start, sector_end] of sectors(start_angle, end_angle, last_layer_branch_number)) {
                 const layer_lines = branch(global_start, sector_start, sector_end, distance_start, height, factor, layer);
-                layer_lines.forEach(line => {
-                    console.log(factors, line[2], line_number);
-                });
+                // layer_lines.forEach(line => {
+                // console.log(factors, line[2], line_number);
+                // });
                 result.push(...layer_lines.map(line => [...line, line_number++]));
             }
             last_layer_branch_number *= factor;
