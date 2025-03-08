@@ -45,6 +45,8 @@ function sectors(start_angle, end_angle, number_of_sectors) {
     return result;
 }
 
+const golden_ratio = 1.62;
+
 function tree_clock(global_start, start_angle, end_angle, height, factors) {
     const result = [];
 
@@ -67,6 +69,7 @@ function tree_clock(global_start, start_angle, end_angle, height, factors) {
             }
             last_layer_branch_number *= factor;
             distance_start += height;
+            height /= golden_ratio;
             layer++;
         }
     }

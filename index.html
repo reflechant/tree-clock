@@ -45,6 +45,7 @@
                 y: height / 2
             };
 
+            // prime factors of 24, 60 and 60
             const factors = {
                 "hours": [2, 2, 2, 3],
                 "minutes": [2, 2, 3, 5],
@@ -62,15 +63,10 @@
                 "minutes": ['#8B0000', '#B22222', '#DC143C', '#FF4500'], // red
                 "seconds": ['#000080', '#0000CD', '#4169E1', '#1E90FF'], // blue
             };
-            const angles = {
-                "hours": 0,
-                "minutes": 2 * Math.PI / 3,
-                "seconds": 4 * Math.PI / 3
-            }
             const lines_num = {
-                "hours": 24,
-                "minutes": 60,
-                "seconds": 60
+                "hours": factors.hours.reduce((acc, curr) => acc * curr, 1),
+                "minutes": factors.minutes.reduce((acc, curr) => acc * curr, 1),
+                "seconds": factors.seconds.reduce((acc, curr) => acc * curr, 1)
             }
             const total_lines = Object.values(lines_num).reduce((acc, curr) => acc + curr, 0);
 
@@ -81,7 +77,7 @@
             for (const key of time_divisions) {
                 const sector_part = lines_num[key] / total_lines;
                 const end_angle = start_angle + 2 * Math.PI * sector_part;
-                const branch_height = Math.min(width, height) * 0.1;
+                const branch_height = Math.min(width, height) * 0.15;
 
                 lines.push(...tree_clock(
                     global_start,
