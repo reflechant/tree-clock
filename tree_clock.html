@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,13 +12,20 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background: #1a1a1a;
+            background: #111111;
             overflow: hidden;
         }
     </style>
 </head>
+
 <body>
     <svg id="tree-svg" width="100%" height="100vh" preserveAspectRatio="xMidYMid meet">
+        <defs>
+            <radialGradient id="glow" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+                <stop offset="0%" style="stop-color:rgba(255,255,255,0.3)" />
+                <stop offset="100%" style="stop-color:rgba(255,255,255,0)" />
+            </radialGradient>
+        </defs>
         <g id="tree-container"></g>
     </svg>
 
@@ -27,47 +35,78 @@
         function renderTree() {
             const svg = document.getElementById('tree-svg');
             const container = document.getElementById('tree-container');
-            
+
             // Set viewBox to make SVG responsive
             const width = window.innerWidth;
             const height = window.innerHeight;
             svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-            
-            // Calculate center point and parameters
+
+            // tree root
             const global_start = {
                 x: width / 2,
-                y: height * 0.8 // Place it 80% down from the top
+                y: height / 2
             };
-            
-            const start_angle = -Math.PI / 6; // -30 degrees from vertical
-            const end_angle = Math.PI / 6;    // +30 degrees from vertical
-            const branch_height = height * 0.1; // 10% of container height
-            const hour_factors = [2, 2, 2, 3]; // Prime factors for 24
-            
+
+            const factors = {
+                "hours": [2, 2, 2, 3],
+                "minutes": [2, 2, 3, 5],
+                "seconds": [2, 2, 3, 5]
+            };
             // Custom colors for each layer
-            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeead'];
+            const colors = {
+                // Hour colors - emerald green shades from darker to lighter
+                "hours": ['#0B4D2C', '#137547', '#1B9C5F', '#23C277'],
+                "minutes": ['#8B0000', '#B22222', '#DC143C', '#FF4500'],
+                "seconds": ['#000080', '#0000CD', '#4169E1', '#1E90FF'],
+            };
+            const angles = {
+                "hours": 0,
+                "minutes": 2 * Math.PI / 3,
+                "seconds": 4 * Math.PI / 3
+            }
+            const lines_num = {
+                "hours": 24,
+                "minutes": 60,
+                "seconds": 60
+            }
+            const total_lines = Object.values(lines_num).reduce((acc, curr) => acc + curr, 0);
 
-            // Get the lines from tree_clock
-            const lines = tree_clock(global_start, start_angle, end_angle, branch_height, hour_factors, null, null, colors);
+            const lines = [];
 
-            // Clear previous content
-            container.innerHTML = '';
+            const time_divisions = ['hours', 'minutes', 'seconds'];
+            let start_angle = 0;
+            for (const key of time_divisions) {
+                const sector_part = lines_num[key] / total_lines;
+                const end_angle = start_angle + 2 * Math.PI * sector_part;
+                const branch_height = Math.min(width, height) * 0.1;
 
-            // Render each line
-            lines.forEach(line => {
-                const [start, end, color] = line;
-                const lineElement = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                
-                lineElement.setAttribute('x1', start.x);
-                lineElement.setAttribute('y1', start.y);
-                lineElement.setAttribute('x2', end.x);
-                lineElement.setAttribute('y2', end.y);
-                lineElement.setAttribute('stroke', color);
-                lineElement.setAttribute('stroke-width', '2');
-                lineElement.setAttribute('stroke-linecap', 'round');
+                lines.push(...tree_clock(
+                    global_start,
+                    start_angle,
+                    end_angle,
+                    branch_height,
+                    factors[key],
+                    colors[key]
+                ));
 
-                container.appendChild(lineElement);
-            });
+                start_angle = end_angle;
+            }
+
+            // Generate SVG markup
+            const svgContent = lines.map(line => {
+                const [start, end, layer, color] = line;
+                return `<line 
+                    x1="${start.x}" 
+                    y1="${start.y}" 
+                    x2="${end.x}" 
+                    y2="${end.y}" 
+                    stroke="${color}" 
+                    stroke-width="${1}" 
+                    stroke-linecap="round" />`;
+            }).join('\n');
+
+            // Update SVG content
+            container.innerHTML = svgContent;
         }
 
         // Initial render and handle window resize
@@ -75,4 +114,5 @@
         window.addEventListener('resize', renderTree);
     </script>
 </body>
+
 </html>
