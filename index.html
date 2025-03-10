@@ -22,23 +22,27 @@
 
         @keyframes pulse {
             0% {
-                stroke-width: 2;
-                opacity: 0.8;
+                stroke-width: 3;
+                opacity: 0.9;
+                filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.7));
             }
 
             50% {
-                stroke-width: 3.5;
+                stroke-width: 6;
                 opacity: 1;
+                filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9));
             }
 
             100% {
-                stroke-width: 2;
-                opacity: 0.8;
+                stroke-width: 3;
+                opacity: 0.9;
+                filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.7));
             }
         }
 
         .current-time {
-            animation: pulse 2s infinite ease-in-out;
+            animation: pulse 1.5s infinite ease-in-out;
+            stroke: #FFFFFF !important;
         }
 
         /* Define gradients for each time division */
@@ -140,7 +144,7 @@
             // 24 + 60 + 60 = 144
             const total_lines = Object.values(time_divisions).reduce((acc, value) => acc + value.lines, 0);
 
-            let start_angle = 0;
+            let start_angle = -Math.PI / 2;
             for (const [time_division_name, time_division_data] of Object.entries(time_divisions)) {
                 const sector_part = time_division_data.lines / total_lines;
                 const end_angle = start_angle + 2 * Math.PI * sector_part;
@@ -150,22 +154,24 @@
                 const dimension = 2; // x and y coordinates
 
                 let polylinePoints = [];
+                let line_idx = 1;
                 for (let i = 0; i < coords.length; i += dimension) {
                     const x = coords[i];
                     const y = coords[i + 1];
                     polylinePoints.push(`${x},${y}`);
                     if (polylinePoints.length === points_in_polyline) {
-                        const line_idx = (i + 1) / (dimension * points_in_polyline);
                         const isCurrentTime = (line_idx === current_time[time_division_name]);
-                        const strokeWidth = isCurrentTime ? 3 : 1.5;
-                        const strokeColor = isCurrentTime ? 'white' : time_division_data.color;
-                        const opacity = isCurrentTime ? 1 : 0.7;
-                        const className = isCurrentTime ? 'class="current-time"' : '';
 
-                        svgContent.push(`<polyline points="${polylinePoints.join(' ')}" ${className}
-                                style="stroke:${strokeColor}; fill:none; stroke-width:${strokeWidth}; stroke-linecap:round; opacity:${opacity};" />`);
+                        const strokeWidth = isCurrentTime ? 6 : 1.5;
+                        const strokeColor = isCurrentTime ? '#FFFFFF' : time_division_data.color;
+                        const opacity = isCurrentTime ? 1 : 0.6;
+                        const className = isCurrentTime ? 'current-time' : '';
+
+                        svgContent.push(`<polyline points="${polylinePoints.join(' ')}" class="${className}"
+                            style="stroke:${strokeColor}; fill:none; stroke-width:${strokeWidth}; stroke-linecap:round; opacity:${opacity};" />`);
 
                         polylinePoints = [];
+                        line_idx++;
                     }
                 }
 
