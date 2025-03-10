@@ -12,19 +12,44 @@
             align-items: center;
             background: #111111;
             overflow: hidden;
+            margin: 0;
+            padding: 0;
         }
 
-        line {
-            transition: stroke-width 0.3s ease, stroke 0.3s ease; /* Animation for line properties */
+        polyline {
+            transition: stroke-width 0.3s ease, stroke 0.3s ease, opacity 0.3s ease;
+        }
+
+        @keyframes pulse {
+            0% {
+                stroke-width: 2;
+                opacity: 0.8;
+            }
+
+            50% {
+                stroke-width: 3.5;
+                opacity: 1;
+            }
+
+            100% {
+                stroke-width: 2;
+                opacity: 0.8;
+            }
+        }
+
+        .current-time {
+            animation: pulse 2s infinite ease-in-out;
         }
 
         /* Define gradients for each time division */
         #gradient-hours {
             stop-color: #0B4D2C;
         }
+
         #gradient-minutes {
             stop-color: #8B0000;
         }
+
         #gradient-seconds {
             stop-color: #000080;
         }
@@ -52,131 +77,110 @@
 
     <script src="tree_clock.js"></script>
     <script>
-        // Render function to create the tree
-        function renderTree() {
+        const time_divisions = {
+            "hours": {
+                "factors": [2, 2, 2, 3],
+                "lines": 24,
+                "color": "url(#gradient-hours)"
+            },
+            "minutes": {
+                "factors": [2, 2, 3, 5],
+                "lines": 60,
+                "color": "url(#gradient-minutes)"
+            },
+            "seconds": {
+                "factors": [2, 2, 3, 5],
+                "lines": 60,
+                "color": "url(#gradient-seconds)"
+            }
+        };
+
+        let cachedWidth = window.innerWidth;
+        let cachedHeight = window.innerHeight;
+
+        // points cache to avoid unnecessary recalculations
+        let points = {};
+
+        function calculate_coords(start_angle, end_angle, line_length, time_division_name) {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            if (width !== cachedWidth || height !== cachedHeight || !points[time_division_name]) {
+                points = {}; // invalidate other time divisions
+                cachedWidth = width;
+                cachedHeight = height;
+
+                const global_start = {
+                    x: width / 2,
+                    y: height / 2
+                };
+
+                points[time_division_name] = tree_clock_new(global_start, start_angle, end_angle, line_length, time_divisions[time_division_name].factors);
+            }
+
+            return points[time_division_name];
+        }
+
+
+        function render() {
             const svg = document.getElementById('tree-svg');
             const container = document.getElementById('tree-container');
 
-            const width = window.innerWidth;
-            const height = window.innerHeight;
-            svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+            svg.setAttribute('viewBox', `0 0 ${cachedWidth} ${cachedHeight}`);
 
             const now = new Date();
             const current_time = {
                 "hours": now.getHours(),
                 "minutes": now.getMinutes(),
                 "seconds": now.getSeconds()
-            }
-
-            // tree root
-            const global_start = {
-                x: width / 2,
-                y: height / 2
             };
 
-            // prime factors of 24, 60 and 60
-            const factors = {
-                "hours": [2, 2, 2, 3],
-                "minutes": [2, 2, 3, 5],
-                "seconds": [2, 2, 3, 5]
-            };
-            // array of arrays of the number of lines in each layer (calculated by running product of factors)
-            const layer_lines = {
-                "hours": factors["hours"].reduce((acc, curr) => {
-                    const product = acc[acc.length - 1] * curr;
-                    return [...acc, product];
-                }, [1]).slice(1),
-                "minutes": factors["minutes"].reduce((acc, curr) => {
-                    const product = acc[acc.length - 1] * curr;
-                    return [...acc, product];
-                }, [1]).slice(1),
-                "seconds": factors["seconds"].reduce((acc, curr) => {
-                    const product = acc[acc.length - 1] * curr;
-                    return [...acc, product];
-                }, [1]).slice(1),
-            };
+            const svgContent = [];
 
-            // we number all lines but we don't want to color only the last layer. Will refine later
-            const line_num_offset = {
-                "hours": 14,
-                "minutes": 18,
-                "seconds": 18
-            }
-            // Custom colors for each layer
-            const colors = {
-                "hours": 'url(#gradient-hours)', // Use gradient for hours
-                "minutes": 'url(#gradient-minutes)', // Use gradient for minutes
-                "seconds": 'url(#gradient-seconds)', // Use gradient for seconds
-            };
-            // it's just 24, 60 and 60 but calculated in a universal way
-            const lines_num = {
-                "hours": factors.hours.reduce((acc, curr) => acc * curr, 1),
-                "minutes": factors.minutes.reduce((acc, curr) => acc * curr, 1),
-                "seconds": factors.seconds.reduce((acc, curr) => acc * curr, 1)
-            }
-            const total_lines = Object.values(lines_num).reduce((acc, curr) => acc + curr, 0);
+            // 24 + 60 + 60 = 144
+            const total_lines = Object.values(time_divisions).reduce((acc, value) => acc + value.lines, 0);
 
-            const lines = [];
-
-            const time_divisions = ['hours', 'minutes', 'seconds'];
             let start_angle = 0;
-            for (const key of time_divisions) {
-                const sector_part = lines_num[key] / total_lines;
+            for (const [time_division_name, time_division_data] of Object.entries(time_divisions)) {
+                const sector_part = time_division_data.lines / total_lines;
                 const end_angle = start_angle + 2 * Math.PI * sector_part;
-                const branch_height = Math.min(width, height) * 0.15;
+                const coords = calculate_coords(start_angle, end_angle, 100, time_division_name);
 
-                lines.push(...tree_clock(
-                    global_start,
-                    start_angle,
-                    end_angle,
-                    branch_height,
-                    factors[key]
-                ).map(line => {
-                    const isLastLayer = line[2] === factors[key].length - 1;
-                    const lineNumber = line[3];
+                const points_in_polyline = time_division_data.factors.length + 1;
+                const dimension = 2; // x and y coordinates
 
-                    let highlight = false;
-                    if (isLastLayer) {
-                        highlight = lineNumber === current_time[key];
-                    } else {
-                        // const time_ratio = current_time[key] / lines_num[key];
+                let polylinePoints = [];
+                for (let i = 0; i < coords.length; i += dimension) {
+                    const x = coords[i];
+                    const y = coords[i + 1];
+                    polylinePoints.push(`${x},${y}`);
+                    if (polylinePoints.length === points_in_polyline) {
+                        const line_idx = (i + 1) / (dimension * points_in_polyline);
+                        const isCurrentTime = (line_idx === current_time[time_division_name]);
+                        const strokeWidth = isCurrentTime ? 3 : 1.5;
+                        const strokeColor = isCurrentTime ? 'white' : time_division_data.color;
+                        const opacity = isCurrentTime ? 1 : 0.7;
+                        const className = isCurrentTime ? 'class="current-time"' : '';
+
+                        svgContent.push(`<polyline points="${polylinePoints.join(' ')}" ${className}
+                                style="stroke:${strokeColor}; fill:none; stroke-width:${strokeWidth}; stroke-linecap:round; opacity:${opacity};" />`);
+
+                        polylinePoints = [];
                     }
-
-                    const color = highlight ? 'white' : colors[key];
-
-                    return [...line, color];
-                }));
+                }
 
                 start_angle = end_angle;
             }
 
-            // Update stroke-width for a more elegant look
-            const lineWidth = 2; // Adjusted line width
-
-            // Generate SVG markup
-            const svgContent = lines.map(line => {
-                const [start, end, layer, lineNumber, color] = line;
-                return `<line 
-                    x1="${start.x}" 
-                    y1="${start.y}" 
-                    x2="${end.x}" 
-                    y2="${end.y}" 
-                    stroke="${color}"
-                    stroke-width="${lineWidth}" 
-                    stroke-linecap="round"
-                    data-layer="${layer}"
-                    data-line-number="${lineNumber}" />`;
-            }).join('\n');
-
-            container.innerHTML = svgContent;
+            container.innerHTML = svgContent.join('');
         }
 
         // Initial render and handle window resize
-        window.addEventListener('load', renderTree);
-        window.addEventListener('resize', renderTree);
+        window.addEventListener('load', render);
+        window.addEventListener('resize', render);
 
         // Set interval to re-render every second
-        setInterval(renderTree, 1000);
+        setInterval(render, 1000);
     </script>
 </body>
 

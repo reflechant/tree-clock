@@ -76,3 +76,60 @@ function tree_clock(global_start, start_angle, end_angle, height, factors) {
 
     return result;
 }
+
+function tree_clock_new(global_start, start_angle, end_angle, line_length, factors) {
+    let lines_total = factors.reduce((acc, curr) => acc * curr, 1);
+    if (lines_total <= 0) {
+        throw new Error("Invalid factors");
+    }
+    const dimension = 2; // x and y coordinates
+
+    const polyline_segment_num = factors.length;
+    const points_in_polyline = polyline_segment_num + 1;
+
+    // Create a flat array to store all points
+    const coords = new Int32Array(lines_total * points_in_polyline * dimension);
+
+    // Fill the starting point (center) for all polylines
+    for (let i = 0; i < lines_total; i++) {
+        const firstPointIdx = i * points_in_polyline;
+        coords[firstPointIdx * dimension] = global_start.x;
+        coords[firstPointIdx * dimension + 1] = global_start.y;
+    }
+
+    let branch_num = 1;
+    let radius = line_length;
+    for (let layer = 1; layer < points_in_polyline; layer++) {
+        const factor = factors[layer - 1];
+        branch_num *= factor;
+
+        const lines_per_branch = lines_total / branch_num;
+        const angle_step = (end_angle - start_angle) / branch_num;
+
+        // For each branch at this layer
+        for (let branch = 0; branch < branch_num; branch++) {
+            const branch_angle = start_angle + (branch + 0.5) * angle_step;
+
+            // For each line in this branch
+            for (let line = 0; line < lines_per_branch; line++) {
+                // Calculate the global line index
+                const lineIdx = branch * lines_per_branch + line;
+
+                // Calculate coordinates for this point
+                const x = global_start.x + Math.cos(branch_angle) * radius;
+                const y = global_start.y + Math.sin(branch_angle) * radius;
+
+                // Store coordinates for this layer's point
+                const pointIdx = lineIdx * points_in_polyline + layer;
+                const coordIdx = pointIdx * dimension;
+                coords[coordIdx] = x;
+                coords[coordIdx + 1] = y;
+            }
+        }
+
+        radius += line_length;
+        line_length /= golden_ratio;
+    }
+
+    return coords;
+}
