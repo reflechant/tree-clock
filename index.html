@@ -154,7 +154,7 @@
                 const dimension = 2; // x and y coordinates
 
                 let polylinePoints = [];
-                let line_idx = 1;
+                let line_idx = 0;
                 // truncate one line at the end because there is no such thing as 24:60:60
                 for (let i = 0; i < coords.length && line_idx < time_division_data.lines; i += dimension) {
                     const x = coords[i];
